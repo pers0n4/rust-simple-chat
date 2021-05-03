@@ -12,8 +12,10 @@ pub fn main(addr: &str) {
 
     let (tx, rx) = mpsc::channel::<String>();
 
+    // 통신을 위한 스레드 생성
     thread::spawn(move || loop {
         let mut buffer = vec![0; BUFFER_SIZE];
+        // 서버로부터 데이터를 받은 경우 출력
         match stream.read_exact(&mut buffer) {
             Ok(_) => {
                 let message = buffer
@@ -31,6 +33,7 @@ pub fn main(addr: &str) {
             }
         }
 
+        // 클라이언트에서 메시지를 입력한 경우 서버로 전송
         match rx.try_recv() {
             Ok(message) => {
                 let mut buffer = message.clone().into_bytes();
@@ -44,6 +47,7 @@ pub fn main(addr: &str) {
     });
 
     println!("Message:");
+    // 새로운 메시지를 받고 서버로 전송
     loop {
         let mut buffer = String::new();
         std::io::stdin().read_line(&mut buffer).unwrap();

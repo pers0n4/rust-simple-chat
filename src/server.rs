@@ -10,11 +10,14 @@ pub fn main(addr: &str) {
     listener.set_nonblocking(true).unwrap();
     println!("Server listening: {}", addr);
 
+    // 송수신을 위한 통신 채널
     let (tx, rx) = mpsc::channel::<String>();
+    // 서버에 접속 중인 클라이언트 목록
     let mut clients = Vec::new();
 
     loop {
         if let Ok((mut socket, addr)) = listener.accept() {
+            // 서버로 송신할 수 있는 채널을 클라이언트로 전달
             let tx = tx.clone();
             clients.push(socket.try_clone().unwrap());
             println!("Client connected: {}", addr);
@@ -23,6 +26,7 @@ pub fn main(addr: &str) {
             thread::spawn(move || loop {
                 let mut buffer = vec![0; BUFFER_SIZE];
 
+                // 클라이언트가 데이터를 전송한 경우
                 match socket.read_exact(&mut buffer) {
                     Ok(_) => {
                         let message = buffer
@@ -45,7 +49,9 @@ pub fn main(addr: &str) {
             });
         }
 
+        // 서버에서 데이터를 수신한 경우
         if let Ok(message) = rx.try_recv() {
+            // 접속 중인 모든 클라이언트에 데이터 전달
             clients = clients
                 .into_iter()
                 .filter_map(|mut client| {
